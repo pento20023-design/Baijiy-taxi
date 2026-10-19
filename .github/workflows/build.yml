@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [customer, driver]
+        app: [customer, driver, admin]
     steps:
       - uses: actions/checkout@v4
 
@@ -37,9 +37,9 @@ jobs:
           APP_NAME: ${{ matrix.app }}
         run: |
           python3 - << 'PY'
-          import os, re, glob
+          import os, re, glob, shutil
           app = os.environ["APP_NAME"]
-          label = "تكسي بيجي" if app == "customer" else "سائق تكسي بيجي"
+          label = {"customer": "تكسي بيجي", "driver": "سائق تكسي بيجي", "admin": "إدارة تكسي بيجي"}[app]
 
           mf = "android/app/src/main/AndroidManifest.xml"
           s = open(mf, encoding="utf-8").read()
@@ -62,20 +62,26 @@ jobs:
 
           g = glob.glob("android/app/build.gradle*")[0]
           t = open(g, encoding="utf-8").read()
-          kts = g.endswith(".kts")
-          if kts:
+          if g.endswith(".kts"):
               t = t.replace("compileOptions {", "compileOptions {\n        isCoreLibraryDesugaringEnabled = true", 1)
               t += '\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
           else:
               t = t.replace("compileOptions {", "compileOptions {\n        coreLibraryDesugaringEnabled true", 1)
               t += "\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\n}\n"
           open(g, "w", encoding="utf-8").write(t)
+
+          # أيقونة التطبيق
+          for d in glob.glob("icons/mipmap-*"):
+              dst = "android/app/src/main/res/" + os.path.basename(d)
+              os.makedirs(dst, exist_ok=True)
+              shutil.copy(d + "/ic_launcher.png", dst + "/ic_launcher.png")
           PY
 
       - run: flutter pub get
         working-directory: src/baiji/${{ matrix.app }}
 
-      - run: flutter build apk --release
+      # --no-shrink: يمنع خطأ SharedPreferences الذي كان يُسجّل خروج المستخدم
+      - run: flutter build apk --release --no-shrink
         working-directory: src/baiji/${{ matrix.app }}
 
       - uses: actions/upload-artifact@v4
