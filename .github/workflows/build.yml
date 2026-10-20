@@ -82,6 +82,11 @@ jobs:
               dst = "android/app/src/main/res/" + os.path.basename(d)
               os.makedirs(dst, exist_ok=True)
               shutil.copy(d + "/ic_launcher.png", dst + "/ic_launcher.png")
+          # أيقونة الإشعارات (بيضاء شفافة)
+          for d in glob.glob("icons/drawable-*"):
+              dst = "android/app/src/main/res/" + os.path.basename(d)
+              os.makedirs(dst, exist_ok=True)
+              shutil.copy(d + "/ic_notification.png", dst + "/ic_notification.png")
           PY
 
       - run: flutter pub get
