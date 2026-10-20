@@ -68,6 +68,11 @@ jobs:
           else:
               t = t.replace("compileOptions {", "compileOptions {\n        coreLibraryDesugaringEnabled true", 1)
               t += "\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\n}\n"
+          # تعطيل التصغير (R8) صراحةً
+          if g.endswith(".kts"):
+              t = re.sub(r"(release\s*\{)", r"\1\n            isMinifyEnabled = false\n            isShrinkResources = false", t, count=1)
+          else:
+              t = re.sub(r"(release\s*\{)", r"\1\n            minifyEnabled false\n            shrinkResources false", t, count=1)
           open(g, "w", encoding="utf-8").write(t)
 
           # أيقونة التطبيق
